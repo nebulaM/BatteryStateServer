@@ -1,0 +1,38 @@
+download bluez5.42
+
+tar xvf bluez...
+sudo apt-get install libglib2.0-dev
+sudo apt-get install libdbus-1-dev
+sudo apt-get install libudev-dev
+sudo apt-get install libical-dev
+sudo apt-get install libreadline-dev
+make
+sudo make install
+sudo cp attrib/gatttool /usr/local/bin/
+
+#check
+systemctl status bluetooth
+#enable BLE
+sudo nano /lib/systemd/system/bluetooth.service
+#inside the service file, under [Service],add --experimental at the end of [ExecStart] line
+sudo systemctl daemon-reload
+sudo systemctl restart bluetooth
+...
+
+#USE BLENO
+sudo systemctl stop bluetooth(ONCE)
+sudo systemctl disable bluetooth(Persist)
+sudo hciconfig hci0 up
+#make sure hci0 is up
+hcitool dev
+sudo apt-get install npm
+#download BLENO
+which nodejs
+which node
+#enter BLENO directory
+npm install
+
+
+
+#add nodejs to apt-get repo
+curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash -
