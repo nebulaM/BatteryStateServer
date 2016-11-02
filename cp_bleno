@@ -1,6 +1,6 @@
 #!/bin/bash
-remoteIP="192.168.1.66"
-remotePW="pi123123"
+remoteIP="192.168.1.68"
+remotePW="raspberry"
 rootDir="/mnt/c/Users/David/Documents/Capstone"
 echo "remember to check remote IP address"
 sshpass -p $remotePW scp $rootDir/bleno_update/* pi@$remoteIP:~/Documents/battery-service/

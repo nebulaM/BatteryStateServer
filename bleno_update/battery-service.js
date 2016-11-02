@@ -2,12 +2,11 @@ var util = require('util');
 
 var bleno = require('../bleno-master');
 
-var BlenoPrimaryService = bleno.PrimaryService;
 
 var BatteryLevelCharacteristic = require('./battery-level-characteristic');
 
 function BatteryService() {
-  BatteryService.super_.call(this, {
+  bleno.PrimaryService.call(this, {
       uuid: '180F',
       characteristics: [
           new BatteryLevelCharacteristic()
@@ -15,6 +14,6 @@ function BatteryService() {
   });
 }
 
-util.inherits(BatteryService, BlenoPrimaryService);
+util.inherits(BatteryService, bleno.PrimaryService);
 
 module.exports = BatteryService;

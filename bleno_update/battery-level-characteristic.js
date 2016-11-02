@@ -1,5 +1,4 @@
 var util = require('util');
-var exec = require('child_process').exec;
 
 var bleno = require('../bleno-master');
 
@@ -12,7 +11,7 @@ var testBatteryValue=0;
 var BatteryLevelCharacteristic = function() {
   BatteryLevelCharacteristic.super_.call(this, {
     uuid: '2A19',
-    properties: ['read'],
+    properties: ['notify', 'read'],
     descriptors: [
       new Descriptor({
         uuid: '2901',
@@ -45,11 +44,33 @@ BatteryLevelCharacteristic.prototype.onReadRequest = function(offset, callback) 
 	data[0]=testBatteryValue&0xFF;
 	data[1]=(testBatteryValue-10)>0?(testBatteryValue-10):20;
 	callback(this.RESULT_SUCCESS, data);
-	console.log("testBatteryValue=",testBatteryValue);
-	console.log("data[0]=",data[0]);
-	console.log("data[1]=",data[1]);
+	console.log("batteryLevel=",data[0]);
+	console.log("batteryHealth=",data[1]);
   
 };
 
+
+BatteryLevelCharacteristic.prototype.onSubscribe = function(maxValueSize, updateValueCallback) {
+console.log('Device  subscribed'); //output that we've subscribed
+            //Now the central has subscribed, poll something 
+            //(the sensor or whatever you're using) every half 
+            //second to see if the value has updated
+   this.interval=setInterval(function() {
+				testBattery();
+	var data=new Uint8Array(2);
+	data[0]=testBatteryValue&0xFF;
+	data[1]=(testBatteryValue-10)>0?(testBatteryValue-10):20;
+	console.log("SUB batteryLevel=",data[0]);
+	console.log("SUB batteryHealth=",data[1]);
+                //poll sensor or get value or something
+                updateValueCallback(data);
+            }, 500);
+};
+
+BatteryLevelCharacteristic.prototype.onUnsubscribe = function(){
+	 console.log("Device unsubscribed");
+     clearInterval(this.interval);
+}
+
+
 module.exports = BatteryLevelCharacteristic;
-1
