@@ -1,0 +1,42 @@
+#USE BLENO
+sudo systemctl stop bluetooth
+sudo systemctl disable bluetooth
+sudo hciconfig hci0 up
+
+curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash -
+
+sudo apt-get install npm
+sudo apt-get install nodejs
+#enter BLENO directory
+
+sudo apt-get install bluetooth bluez libbluetooth-dev libudev-dev
+sudo apt-get install libusb-1.0-0-dev
+npm install node-hid
+npm install
+npm install i2c
+#also install a module in bleno-master derictory
+npm install
+
+#setup i2c general(one time setup)
+sudo nano /etc/modules
+#add i2c-bcm2708
+sudo modprobe i2c-bcm2708
+#check device is up
+lsmod
+
+sudo nano /boot/config.txt
+uncomment dtparam=i2c_arm=on
+
+#add the following to .bashrc in order to start battery service on login
+if pgrep "node" > /dev/null
+then
+        echo "killing process $(pgrep "node")..."
+        sudo kill $(pgrep "node")
+fi
+echo "start BLE battery service..."
+sudo node /home/pi/Documents/battery-service/main.js
+
+#auto start a terminal on boot
+#nano ~/.config/lxsession/LXDE-pi/autostart
+#add this to end of file:
+@lxterminal

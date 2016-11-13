@@ -7,6 +7,10 @@ var BatteryService = require('./battery-service');
 
 var primaryService = new BatteryService();
 
+
+
+
+
 bleno.on('stateChange', function(state) {
   console.log('on -> stateChange: ' + state);
 
