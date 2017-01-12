@@ -73,15 +73,14 @@ function readIP(){
 var batteryLevelQueue=[];
 function readI2C(){
   this.voltageInterval=setInterval(function() {
-    if(batteryLevelQueue.length<=30){
-      fuelGauge.getVoltage((function(data){
-        batteryLevelQueue.push((data-12)*142.86);
-        console.log("@readI2C put into queue: from fuel gauge, voltage is "+data);
-      }));
-    }else{
-      //dequeue the last item from queue
+    if(batteryLevelQueue.length>30){
+      //dequeue the last item from queue, just throw that data away
       batteryLevelQueue.shift();
     }
+    fuelGauge.getVoltage((function(data){
+      batteryLevelQueue.push((data-12)*142.86);
+      console.log("@readI2C put into queue: from fuel gauge, voltage is "+data);
+    }));
   },500);
   	fuelGauge.getCurrent((function(data){
 		console.log("from fuel gauge, current is "+data);
