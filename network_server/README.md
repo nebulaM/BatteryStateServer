@@ -1,6 +1,6 @@
 # BatteryStateNetworkServer
 
-This server receives battery data from [an Mobile App](https://github.com/nebulaM/BatteryStateBLE) via Internet and deal with that data
+This server receives battery data from [an Mobile App](https://github.com/nebulaM/BatteryStateBLE) via Internet and deals with that data.
 
 ##Dependency
 
