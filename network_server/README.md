@@ -15,7 +15,7 @@ in parent folder of network_server(for example if network_server is inside folde
 
 ```sh
 javac -cp . network_server/*.java
-```sh
+```
 
 ##Usage
 
@@ -23,4 +23,4 @@ in parent folder of network_server:
 
 ```sh
 java -cp . network_server.Server
-```sh
+```
