@@ -41,9 +41,9 @@ then
         sudo kill $(pgrep "node")
 fi
 echo "start BLE battery service..."
-sudo node /home/pi/Documents/battery-service/main.js
-
-
+sudo node /home/pi/Documents/battery-service/main.js &
+#optional: for getting ip
+sudo /usr/bin/python ~/Documents/battery-service/checkIP.py &
 
 #auto start a terminal on boot
 sudo nano ~/.config/lxsession/LXDE-pi/autostart
