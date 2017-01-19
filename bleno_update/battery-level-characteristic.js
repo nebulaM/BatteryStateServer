@@ -1,6 +1,7 @@
 const verbose=true;
 const needIP=true;
 
+var i2cInterval=false;
 
 var util = require('util');
 
@@ -23,6 +24,15 @@ fuelGauge.initialize(function(err,data){
 
 //for getting ip
 const fs = require('fs');
+const path ='/home/pi/Documents/ipAddr.txt';
+var hasIP=false;
+if (!fs.existsSync(path)) {
+	hasIP=false;
+	
+}else{
+	hasIP=true;
+}
+
 
 var testReadCount=0;
 
@@ -44,7 +54,7 @@ var BatteryLevelCharacteristic = function() {
 util.inherits(BatteryLevelCharacteristic, Characteristic);
 
 function readIP(){
-  var ip=fs.readFileSync('/home/pi/Documents/ipAddr.txt', 'ascii');
+  var ip=fs.readFileSync(path, 'ascii');
   ip=ip.trim();
   ip=ip.split(".");
   //console.log(ip);
@@ -71,24 +81,28 @@ function readIP(){
   return byteArray
 }
 var batteryLevelQueue=[];
-function readI2C(){
-  this.voltageInterval=setInterval(function() {
-    if(batteryLevelQueue.length>30){
+
+BatteryLevelCharacteristic.prototype.setI2cUpdateInterval=function(ms){
+  this.i2cUpdateInterval=setInterval(function() {
+    if(batteryLevelQueue.length>20){
       //dequeue the last item from queue, just throw that data away
       batteryLevelQueue.shift();
     }
     fuelGauge.getVoltage((function(data){
       batteryLevelQueue.push((data-12)*142.86);
-      console.log("@readI2C put into queue: from fuel gauge, voltage is "+data);
+      console.log("@setI2cUpdateInterval put into queue: from fuel gauge, voltage is "+data);
     }));
-  },500);
-  	fuelGauge.getCurrent((function(data){
+	
+	fuelGauge.getCurrent((function(data){
 		console.log("from fuel gauge, current is "+data);
 	}));
 
 	fuelGauge.getHealth((function(data){
 		console.log("from fuel gauge, health is "+data);
 	}));
+	
+  },ms);
+  	
 }
 //test
 var x=100
@@ -101,7 +115,7 @@ BatteryLevelCharacteristic.prototype.onReadRequest = function(offset, callback) 
   }
 	data[1]=x
 	x=x>0?x-1:100;
-  if(needIP){
+  if(needIP&&hasIP){
     //data 2-5 ip addr
   	var ip=readIP();
   	for(var i=0;i<4;++i){
@@ -124,10 +138,13 @@ BatteryLevelCharacteristic.prototype.onSubscribe = function(maxValueSize, callba
   if(verbose){
     console.log("@onSubscribe Device  subscribed");
   }
-  readI2C();
+  if(this.i2cUpdateInterval!=null){
+	  clearInterval(this.i2cUpdateInterval);
+  }
+  this.setI2cUpdateInterval(300);
   this.interval=setInterval(function() {
 
-	var data=new Uint8Array(3);
+  var data=new Uint8Array(3);
   if(batteryLevelQueue.length>0){
 	   data[0]=parseInt(batteryLevelQueue.shift())&0xFF;
   }else{
@@ -147,8 +164,13 @@ BatteryLevelCharacteristic.prototype.onSubscribe = function(maxValueSize, callba
 BatteryLevelCharacteristic.prototype.onUnsubscribe = function(){
   if(verbose){
     console.log("@onUnsubscribe Device unsubscribed");
+	console.log("@onUnsubscribe slower battery data update rate from 300ms to 10s");
   }
   clearInterval(this.interval);
+  if(this.i2cUpdateInterval!=null){
+	  clearInterval(this.i2cUpdateInterval);
+  }
+  this.setI2cUpdateInterval(10000);
 }
 
 
