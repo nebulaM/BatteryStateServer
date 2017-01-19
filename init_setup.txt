@@ -45,6 +45,9 @@ sudo node /home/pi/Documents/battery-service/main.js &
 #optional: for getting ip
 sudo /usr/bin/python ~/Documents/battery-service/checkIP.py &
 
+#important,install a crontab on reboot to prevent from a strange "command disallowed error"
+crontab -e
+@reboot sudo node /home/pi/Documents/battery-service/main.js
 #auto start a terminal on boot
 sudo nano ~/.config/lxsession/LXDE-pi/autostart
 #add this to end of file:
