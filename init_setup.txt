@@ -1,4 +1,4 @@
-#USE BLENO
+#configue bluetooth
 sudo systemctl stop bluetooth
 sudo systemctl disable bluetooth
 sudo hciconfig hci0 up
@@ -7,10 +7,17 @@ curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash -
 
 sudo apt-get install npm
 sudo apt-get install nodejs
-#enter BLENO directory
+cd ~/Documents
+git clone https://github.com/nebulaM/bleno
+mv bleno bleno-master
+git clone https://github.com/nebulaM/BatteryStateServer
+mkdir battery-service
+mv BatteryStateServer/bleno_update/* battery-service/
+mv BatteryStateServer/gatt.js bleno/lib/hci-socket/
 
-sudo apt-get install bluetooth bluez libbluetooth-dev libudev-dev
-sudo apt-get install libusb-1.0-0-dev
+sudo apt-get install bluetooth bluez libbluetooth-dev libudev-dev install libusb-1.0-0-dev
+#enter battery-service directory
+cd battery-service
 npm install node-hid
 npm install
 npm install i2c
@@ -36,7 +43,9 @@ fi
 echo "start BLE battery service..."
 sudo node /home/pi/Documents/battery-service/main.js
 
+
+
 #auto start a terminal on boot
-#nano ~/.config/lxsession/LXDE-pi/autostart
+sudo nano ~/.config/lxsession/LXDE-pi/autostart
 #add this to end of file:
 @lxterminal
