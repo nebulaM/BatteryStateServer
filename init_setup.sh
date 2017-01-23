@@ -32,18 +32,19 @@ cd ..
 
 #setup i2c general(one time setup)
 #add i2c-bcm2708
-echo "i2c-bcm2708" >> myi2c
-sudo cat /etc/modules ./myi2c > /etc/modules
+# > to overrite, >> to append
+echo "i2c-bcm2708" > myi2c
+sudo cat /etc/modules ./myi2c >> /etc/modules
 rm myi2c
 sudo modprobe i2c-bcm2708
 #check device is up
 lsmod
 
-echo "dtparam=i2c_arm=on" >> myi2cboot
-sudo cat /boot/config.txt ./myi2cboot > /boot/config.txt
+echo "dtparam=i2c_arm=on" > myi2cboot
+sudo cat /boot/config.txt ./myi2cboot >> /boot/config.txt
 rm myi2cboot
 
-sudo cat ~/.bashrc ./init/bashrc > ~/.bashrc
+sudo cat ~/.bashrc ./init/bashrc >> ~/.bashrc
 
 #important,install a crontab on reboot to prevent from a strange "command disallowed error"
 crontab -l > mycron
@@ -52,8 +53,8 @@ crontab mycron
 rm mycron
 #auto start a terminal on boot
 #add this to end of file:
-echo "@lxterminal" >> myAuto
-sudo cat ~/.config/lxsession/LXDE-pi/autostart ./myAuto > ~/.config/lxsession/LXDE-pi/autostart
+echo "@lxterminal" > myAuto
+sudo cat ~/.config/lxsession/LXDE-pi/autostart ./myAuto >> ~/.config/lxsession/LXDE-pi/autostart
 rm myAuto
 
 echo "finsihed setup"
