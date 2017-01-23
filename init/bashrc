@@ -1,0 +1,11 @@
+#add the following to .bashrc in order to start battery service on login
+if pgrep "node" > /dev/null
+then
+        echo "killing process $(pgrep "node")..."
+        sudo kill $(pgrep "node")
+fi
+echo "start BLE battery service..."
+sudo node /home/pi/Documents/battery-service/main.js &
+#optional: for getting ip
+sudo /usr/bin/python ~/Documents/battery-service/checkIP.py &
+
