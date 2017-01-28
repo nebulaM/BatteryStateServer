@@ -49,6 +49,10 @@ rm mycron
 #auto start a terminal on boot
 sudo echo "@lxterminal" >> ~/.config/lxsession/LXDE-pi/autostart && echo "setup autostart a terminal onReoot..."
 
+#essential for writting IP into a file
+cp ./writeIP.sh DOCDIR
+sudo chmod +x DOCDIR/writeIP.sh
+
 echo "finsihed all setup..."
 
 sudo reboot now
