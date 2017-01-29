@@ -1,20 +1,27 @@
 #!/bin/bash
-remote="pi@192.168.137.200:/home/pi/"
+remote="pi@192.168.137.200:home/pi/"
 remotePW="pi123123"
 usage () {
 	echo ""
-	echo "This script copies files from local to remote"
+	echo "This script copies files from local to ${remote}[remoteDir]"
 	echo ""
-	echo "Usage: bash cp.sh [remoteDir] [localDir(s)] "
+	echo "Usage: bash cp.sh [localDir(s)] [remoteDir]"
 	echo ""
-	echo "Example 1, copy [1.txt] and [2.txt] in [./a1] to remote:"
-	echo "bash cp.sh ./a1/1.txt ./a1/2.txt /home/pi/Documents/a1";
+	echo "Example 1, copy [1.txt] and [2.txt] in [./a1] to ${remote}Documents/a1:"
+	echo "bash cp.sh ./a1/1.txt ./a1/2.txt Documents/a1"
 	echo ""
-	echo "Example 2, copy all files from [./a1] to remote:";
-	echo "bash cp.sh ./a1/* /home/pi/Documents/a1";
+	echo "Example 2, copy all txt files from [./a1] to ${remote}Documents/a1:"
+	echo "bash cp.sh ./a1/*.txt Documents/a1"
 	echo ""
-	exit 1;
+	echo "Example 3, copy all txt and java files from [./a1] to ${remote}Documents/a1:"
+	echo "bash cp.sh ./a1/*.txt ./a1/*.java Documents/a1"
+	echo ""
+	echo "Example 4, copy 1.txt and all java files from [./a1] to ${remote}Documents/a1:"
+	echo "bash cp.sh ./a1/1.txt ./a1/*.java Documents/a1"
+	exit 1
 }
+
+echo "bash cp.sh -h for usage"
 
 if [ $1 == "-h" ]; then
 	usage
