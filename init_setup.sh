@@ -1,4 +1,6 @@
 #!/bin/bash
+# Author: nebuleM [nebulem12@gmail.com]
+# Date:	  Jan 27th, 2017
 DOCDIR=/home/pi/Documents
 echo "config bluetooth..."
 sudo systemctl stop bluetooth
