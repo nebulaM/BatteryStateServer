@@ -1,7 +1,7 @@
 #!/bin/bash
 # Author: nebuleM [nebulem12@gmail.com]
 # Date:	  Jan 29th, 2017
-remote="pi@192.168.137.200:home/pi/"
+remote="pi@192.168.137.200:/home/pi/"
 remotePW="pi123123"
 usage () {
 	echo ""
