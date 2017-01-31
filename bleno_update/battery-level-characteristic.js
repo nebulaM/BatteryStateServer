@@ -120,14 +120,14 @@ BatteryLevelCharacteristic.prototype.onReadRequest = function(offset, callback) 
     //data 2-5 ip addr
   	var ip=readIP();
   	for(var i=0;i<4;++i){
-  		data.push=ip[i]
+  		data.push(ip[i]);
   	}
   }
 	if(errorCode==1){
 		callback(this.RESULT_SUCCESS,errorCode);
 	}else{
 		if(verbose){
-	  	console.log("@onSubscribe data to be sent is "+data);
+	  	console.log("@onReadRequest data to be sent is "+data);
 	  }
   	callback(this.RESULT_SUCCESS, data);
 	}
