@@ -10,18 +10,22 @@ function MAX17205(device, address) {
 }
 
 MAX17205.nRSense=0x1CF
-MAX17205.prototype.initialize = function(callback) {
+//1BC-1BF contains a 64-bit unique number for this chip
+MAX17205.nROMID0=0x1BC;
+
+MAX17205.prototype.initialize = function() {
   this.i2cdev = new I2cDev(this.address, {device : this.device});
   this.i2cUpperPage=new I2cDev(MAX17205.UPPER_PAGE_ADDRESS,{device: this.device});
+
   this.i2cUpperPage.readBytes(MAX17205.nRSense,2, function(err, buffer){
 	  if (err){
-       callback(err);
+       console.log(err);
      }else{
        var data=(buffer.readUInt8(1)<<8)+buffer.readUInt8(0);
        console.log("nRsense is "+data);
-       callback(null,data);
     }
   });
+
 };
 
 MAX17205.prototype.setNRSense=function(callback){
@@ -72,15 +76,15 @@ MAX17205.prototype.getCurrent= function (callback) {
 	var data=(buffer.readUInt8(1)<<8)+buffer.readUInt8(0)
 	//resolution wrt sense resistance
 	//var data=data/500000
-	console.log("data is "+ data);
-	console.log("~data is "+ (~data));
+	//console.log("data is "+ data);
+	//console.log("~data is "+ (~data));
 	data=(~data)&0xffff;
     callback(data);
   });
 };
 
 //Age Register(Percentage) (0x07)
-MAX17205.AGE_REG_ADDR=0x35;
+MAX17205.AGE_REG_ADDR=0x7;
 MAX17205.prototype.getHealth= function (callback) {
 
 	this.i2cdev.readBytes(MAX17205.AGE_REG_ADDR, 1, function(err, buffer){
@@ -89,6 +93,23 @@ MAX17205.prototype.getHealth= function (callback) {
   });
 };
 
+MAX17205.prototype.getUniqueID= function (callback) {
+  this.i2cUpperPage.readBytes(MAX17205.nROMID0, 8, function(err, buffer){
+  if (err) return callback(err);
+  else{
+    var data=[];
+    //ONLY need the middle 6 bytes of data.
+    for(i=6;i>=1;i--){
+      data.push(buffer.readUInt8(i));
+    }
+    if(buffer.readUInt8(0)!=38){
+      console.log("Warnning: This ID may not be correct" );
+    }
+    console.log("@getUniqueID: ID is "+data);
+    callback(data);
+  }
+  });
+};
 
 
 module.exports = MAX17205;

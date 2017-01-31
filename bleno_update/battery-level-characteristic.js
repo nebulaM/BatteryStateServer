@@ -12,15 +12,7 @@ var Characteristic = bleno.Characteristic;
 
 var max17205 = require('./max17205');
 var fuelGauge = new max17205();
-fuelGauge.initialize(function(err,data){
-  if(err!=null){
-    console.log("error when trying to read nRSense");
-    console.log(err);
-  }
-  else if(data!=0x01f4){
-    fuelGauge.setNRSense(function(err){if(err!=null) console.log(err);});
-  }
-});
+fuelGauge.initialize();
 
 //for getting ip
 const fs = require('fs');
@@ -28,15 +20,10 @@ const path ='/home/pi/Documents/ipAddr.txt';
 var hasIP=false;
 if (!fs.existsSync(path)) {
 	hasIP=false;
-	
+
 }else{
 	hasIP=true;
 }
-
-
-var testReadCount=0;
-
-var batteryHealth=0;
 
 var BatteryLevelCharacteristic = function() {
   BatteryLevelCharacteristic.super_.call(this, {
@@ -57,7 +44,7 @@ function readIP(){
   var ip=fs.readFileSync(path, 'ascii');
   ip=ip.trim();
   ip=ip.split(".");
-  //console.log(ip);
+  console.log(ip);
   var byteArray = new Uint8Array(ip.length);
   for(var i=0;i<ip.length;++i){
 	  for(var j=0;j<ip[i].length;++j){
@@ -80,10 +67,20 @@ function readIP(){
   //console.log(byteArray)
   return byteArray
 }
-var batteryLevelQueue=[];
 
+var uniqueID=[];
+var batteryLevelQueue=[];
+var batteryHealth=0;
 BatteryLevelCharacteristic.prototype.setI2cUpdateInterval=function(ms){
   this.i2cUpdateInterval=setInterval(function() {
+		//no ID for the I2C chip yet
+		//6 byte uniqueID
+		if(uniqueID.length!=6){
+			fuelGauge.getUniqueID((function (data) {
+			uniqueID=data;
+			console.log("@setI2cUpdateInterval uniqueID: "+uniqueID);
+		}));
+		}
     if(batteryLevelQueue.length>20){
       //dequeue the last item from queue, just throw that data away
       batteryLevelQueue.shift();
@@ -92,7 +89,7 @@ BatteryLevelCharacteristic.prototype.setI2cUpdateInterval=function(ms){
       batteryLevelQueue.push((data-12)*142.86);
       console.log("@setI2cUpdateInterval put into queue: from fuel gauge, voltage is "+data);
     }));
-	
+
 	fuelGauge.getCurrent((function(data){
 		console.log("from fuel gauge, current is "+data);
 	}));
@@ -100,37 +97,41 @@ BatteryLevelCharacteristic.prototype.setI2cUpdateInterval=function(ms){
 	fuelGauge.getHealth((function(data){
 		console.log("from fuel gauge, health is "+data);
 	}));
-	
+
   },ms);
-  	
+
 }
-//test
-var x=100
+
 BatteryLevelCharacteristic.prototype.onReadRequest = function(offset, callback) {
-	var data=new Uint8Array(6);
-  if(batteryLevelQueue.length>0){
-	   data[0]=parseInt(batteryLevelQueue.shift())&0xFF;
-  }else{
-    data[0]=0;
+	var data=[];
+	var errorCode=0;
+  if(batteryLevelQueue.length<=0){
+	  errorCode=1;
   }
-	data[1]=x
-	x=x>0?x-1:100;
+	if(uniqueID.length!=6){
+		errorCode=1;
+	}
+	data.push(errorCode);
+	data=data.concat(uniqueID);
+	data.push(parseInt(batteryLevelQueue.shift())&0xFF);
+	//for now we do not have health
+	data.push(80);
   if(needIP&&hasIP){
     //data 2-5 ip addr
   	var ip=readIP();
   	for(var i=0;i<4;++i){
-  		data[i+2]=ip[i]
+  		data.push=ip[i]
   	}
-  }else{
-    //TODO:A better number to indicate no ip
-    data[3]=0;
   }
-  if(verbose){
-  	console.log("@onReadRequest data array "+data);
-    console.log("@onReadRequest batteryLevel= "+data[0]);
-  	console.log("@onReadRequest batteryHealth= "+data[1]);
-  }
-	callback(this.RESULT_SUCCESS, data);
+	if(errorCode==1){
+		callback(this.RESULT_SUCCESS,errorCode);
+	}else{
+		if(verbose){
+	  	console.log("@onSubscribe data to be sent is "+data);
+	  }
+  	callback(this.RESULT_SUCCESS, data);
+	}
+
 };
 
 
@@ -138,26 +139,38 @@ BatteryLevelCharacteristic.prototype.onSubscribe = function(maxValueSize, callba
   if(verbose){
     console.log("@onSubscribe Device  subscribed");
   }
-  if(this.i2cUpdateInterval!=null){
+	if(this.i2cUpdateInterval!=null){
 	  clearInterval(this.i2cUpdateInterval);
   }
+	//data array is errorCode + uniqueID + battery level + health (+ IP)
+	//							1 byte			6 bytes				1 byte				1 byte	4 bytes
+	//errorCode: 0-no error; 1-error
+
   this.setI2cUpdateInterval(300);
   this.interval=setInterval(function() {
+  var data=[];
+	var errorCode=0;
+  if(batteryLevelQueue.length<=0){
+	  errorCode=1;
+  }
+	if(uniqueID.length!=6){
+		errorCode=1;
+	}
+	data.push(errorCode);
+	data=data.concat(uniqueID);
+	data.push(parseInt(batteryLevelQueue.shift())&0xFF);
+	//for now we do not have health
+	data.push(95);
 
-  var data=new Uint8Array(3);
-  if(batteryLevelQueue.length>0){
-	   data[0]=parseInt(batteryLevelQueue.shift())&0xFF;
-  }else{
-    data[0]=0;
-  }
-	data[1]=95;
-	data[3]=0;
-  if(verbose){
-  	console.log("@onSubscribe batteryLevel is "+data[0]);
-  	console.log("@onSubscribe batteryHealth is ",data[1]);
-  }
   //poll sensor or get value or something
-  callback(data);
+	if(errorCode==1){
+		callback(errorCode);
+	}else{
+		if(verbose){
+	  	console.log("@onSubscribe data to be sent is "+data);
+	  }
+  	callback(data);
+	}
   }, 1000);
 };
 
