@@ -39,6 +39,9 @@ sudo modprobe i2c-bcm2708
 lsmod
 
 sudo echo "dtparam=i2c_arm=on" >> /boot/config.txt && echo "appended dtparam=i2c_arm=on to /boot/config.txt..."
+
+python init/init_i2c.py
+
 #bashrc setup
 sudo cat ./init/bashrc >> ~/.bashrc && echo "setup job onReboot..."
 
