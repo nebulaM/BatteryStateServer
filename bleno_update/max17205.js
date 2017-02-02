@@ -12,40 +12,41 @@ function MAX17205(device, address) {
 MAX17205.nRSense=0x1CF
 //1BC-1BF contains a 64-bit unique number for this chip
 MAX17205.nROMID0=0x1BC;
+MAX17205.nDesignCap=0x1B3;
+MAX17205.nPackConfig=0x1B5;
+MAX17205.nNVConfig=0x1B8;
 
 MAX17205.prototype.initialize = function() {
   this.i2cdev = new I2cDev(this.address, {device : this.device});
   this.i2cUpperPage=new I2cDev(MAX17205.UPPER_PAGE_ADDRESS,{device: this.device});
-
-  this.i2cUpperPage.readBytes(MAX17205.nRSense,2, function(err, buffer){
+  
+  /*this.i2cUpperPage.readBytes.call(this.i2cUpperPage,MAX17205.nRSense,2, (function(){
+	
+	return (function(err, buffer) {
 	  if (err){
-       console.log(err);
+       
+	   //callback(err);
      }else{
        var data=(buffer.readUInt8(1)<<8)+buffer.readUInt8(0);
        console.log("nRsense is "+data);
+	   if(data!=500){
+		   console.log("will change sense register to 0x01F4" );
+		   console.log(this.constructor);
+		   this.writeBytes(MAX17205.nRSense,[0xF4,0x01],function(err) {if (err) return callback(err);});
+	   }
+	   
     }
-  });
-
+	})
+  }).call(this.i2cUpperPage));*/
+  
+	this.i2cUpperPage.readBytes(MAX17205.nDesignCap,1,function(err, buffer){
+    if (err) console.log(err);
+	console.log("nDesignCap "+buffer.readUInt8(0));});
+	
+	this.i2cUpperPage.readBytes(MAX17205.nPackConfig,1,function(err, buffer){
+    if (err) console.log(err);
+	console.log("nPackConfig "+buffer.readUInt8(0));});
 };
-
-MAX17205.prototype.setNRSense=function(callback){
-  console.log("will change sense register to 0x01F4" );
-  this.i2cUpperPage.writeBytes(MAX17205.nRSense,[0xF4,0x01],function(err) {if (err) return callback(err);});
-};
-
-MAX17205.DEFAULT_PACKCFG=0xA02;
-MAX17205.PACKCFG_ADDR=0xBD;
-MAX17205.DATA_LENGTH=2;
-MAX17205.prototype.getPackCfg= function (callback) {
-
-	/*this.i2cdev.readBytes(MAX17205.PACKCFG_ADDR,MAX17205.DATA_LENGTH,function(err, buffer){
-    if (err) return callback(err);
-	callback(null, buffer);
-  });*/
-
-};
-
-
 
 /**
  *reports the voltage of the entire cell stack in 2S to 4S configuration
@@ -65,8 +66,6 @@ MAX17205.prototype.getVoltage= function (callback) {
   });
 };
 
-
-
 //Current Register (00Ah)
 MAX17205.CURRENT_REG_ADDR=0x0A;
 MAX17205.prototype.getCurrent= function (callback) {
@@ -84,11 +83,12 @@ MAX17205.prototype.getCurrent= function (callback) {
 };
 
 //Age Register(Percentage) (0x07)
-MAX17205.AGE_REG_ADDR=0x7;
+MAX17205.AGE_REG_ADDR=0x07;
 MAX17205.prototype.getHealth= function (callback) {
 
 	this.i2cdev.readBytes(MAX17205.AGE_REG_ADDR, 1, function(err, buffer){
     if (err) return callback(err);
+    console.log("@getHealth: health is "+buffer.readUInt8(0) );
     callback(buffer.readUInt8(0));
   });
 };

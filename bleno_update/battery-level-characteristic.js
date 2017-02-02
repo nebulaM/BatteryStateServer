@@ -70,7 +70,7 @@ function readIP(){
 
 var uniqueID=[];
 var batteryLevelQueue=[];
-var batteryHealth=0;
+var batteryHealthQueue=[];
 BatteryLevelCharacteristic.prototype.setI2cUpdateInterval=function(ms){
   this.i2cUpdateInterval=setInterval(function() {
 		//no ID for the I2C chip yet
@@ -85,9 +85,13 @@ BatteryLevelCharacteristic.prototype.setI2cUpdateInterval=function(ms){
       //dequeue the last item from queue, just throw that data away
       batteryLevelQueue.shift();
     }
+	if(batteryHealthQueue.length>20){
+      //dequeue the last item from queue, just throw that data away
+      batteryHealthQueue.shift();
+    }
     fuelGauge.getVoltage((function(data){
       batteryLevelQueue.push((data-12)*142.86);
-      console.log("@setI2cUpdateInterval put into queue: from fuel gauge, voltage is "+data);
+      //console.log("@setI2cUpdateInterval put into queue: from fuel gauge, voltage is "+data);
     }));
 
 	fuelGauge.getCurrent((function(data){
@@ -96,18 +100,19 @@ BatteryLevelCharacteristic.prototype.setI2cUpdateInterval=function(ms){
 
 	fuelGauge.getHealth((function(data){
 		console.log("from fuel gauge, health is "+data);
-	}));
-
-  },ms);
-
-}
+		batteryHealthQueue.push(data);
+	}));},ms);
+};
 
 BatteryLevelCharacteristic.prototype.onReadRequest = function(offset, callback) {
 	var data=[];
 	var errorCode=0;
-  if(batteryLevelQueue.length<=0){
+	if(batteryLevelQueue.length<=0){
 	  errorCode=1;
-  }
+	}
+	if(batteryHealthQueue.length<=0){
+	  errorCode=1;
+	}
 	if(uniqueID.length!=6){
 		errorCode=1;
 	}
@@ -115,14 +120,14 @@ BatteryLevelCharacteristic.prototype.onReadRequest = function(offset, callback) 
 	data=data.concat(uniqueID);
 	data.push(parseInt(batteryLevelQueue.shift())&0xFF);
 	//for now we do not have health
-	data.push(80);
-  if(needIP&&hasIP){
-    //data 2-5 ip addr
-  	var ip=readIP();
-  	for(var i=0;i<4;++i){
-  		data.push(ip[i]);
-  	}
-  }
+	data.push(parseInt(batteryHealthQueue.shift())&0xFF);
+	if(needIP&&hasIP){
+		//data 2-5 ip addr
+		var ip=readIP();
+		for(var i=0;i<4;++i){
+			data.push(ip[i]);
+		}
+	}
 	if(errorCode==1){
 		callback(this.RESULT_SUCCESS,errorCode);
 	}else{
@@ -134,57 +139,52 @@ BatteryLevelCharacteristic.prototype.onReadRequest = function(offset, callback) 
 
 };
 
-
 BatteryLevelCharacteristic.prototype.onSubscribe = function(maxValueSize, callback) {
-  if(verbose){
-    console.log("@onSubscribe Device  subscribed");
-  }
+	if(verbose){
+		console.log("@onSubscribe Device  subscribed");
+	}
 	if(this.i2cUpdateInterval!=null){
 	  clearInterval(this.i2cUpdateInterval);
-  }
+	}
 	//data array is errorCode + uniqueID + battery level + health (+ IP)
 	//							1 byte			6 bytes				1 byte				1 byte	4 bytes
 	//errorCode: 0-no error; 1-error
 
-  this.setI2cUpdateInterval(300);
-  this.interval=setInterval(function() {
-  var data=[];
+	this.setI2cUpdateInterval(300);
+	this.interval=setInterval(function() {
+	var data=[];
 	var errorCode=0;
-  if(batteryLevelQueue.length<=0){
+	if(batteryLevelQueue.length<=0){
 	  errorCode=1;
-  }
-	if(uniqueID.length!=6){
-		errorCode=1;
+	}
+	if(batteryHealthQueue.length<=0){
+	  errorCode=1;
 	}
 	data.push(errorCode);
 	data=data.concat(uniqueID);
 	data.push(parseInt(batteryLevelQueue.shift())&0xFF);
-	//for now we do not have health
-	data.push(95);
+	data.push(parseInt(batteryHealthQueue.shift())&0xFF);
 
-  //poll sensor or get value or something
+	//poll sensor or get value or something
 	if(errorCode==1){
 		callback(errorCode);
 	}else{
 		if(verbose){
-	  	console.log("@onSubscribe data to be sent is "+data);
-	  }
+			console.log("@onSubscribe data to be sent is "+data);
+		}
   	callback(data);
-	}
-  }, 1000);
+	}}, 1000);
 };
 
 BatteryLevelCharacteristic.prototype.onUnsubscribe = function(){
   if(verbose){
     console.log("@onUnsubscribe Device unsubscribed");
-	console.log("@onUnsubscribe slower battery data update rate from 300ms to 10s");
+	//console.log("@onUnsubscribe slower battery data update rate from 300ms to 10s");
   }
   clearInterval(this.interval);
   if(this.i2cUpdateInterval!=null){
 	  clearInterval(this.i2cUpdateInterval);
   }
-  this.setI2cUpdateInterval(10000);
-}
-
-
+  //this.setI2cUpdateInterval(10000);
+};
 module.exports = BatteryLevelCharacteristic;
