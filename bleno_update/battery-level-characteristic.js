@@ -90,7 +90,7 @@ BatteryLevelCharacteristic.prototype.setI2cUpdateInterval=function(ms){
       batteryHealthQueue.shift();
     }
     fuelGauge.getVoltage((function(data){
-      batteryLevelQueue.push((data-12)*142.86);
+      batteryLevelQueue.push(data);
       //console.log("@setI2cUpdateInterval put into queue: from fuel gauge, voltage is "+data);
     }));
 
@@ -118,7 +118,7 @@ BatteryLevelCharacteristic.prototype.onReadRequest = function(offset, callback) 
 	}
 	data.push(errorCode);
 	data=data.concat(uniqueID);
-	data.push(parseInt(batteryLevelQueue.shift())&0xFF);
+	data.push(parseInt(batteryLevelQueue.shift()));
 	//for now we do not have health
 	data.push(parseInt(batteryHealthQueue.shift())&0xFF);
 	if(needIP&&hasIP){
@@ -162,7 +162,7 @@ BatteryLevelCharacteristic.prototype.onSubscribe = function(maxValueSize, callba
 	}
 	data.push(errorCode);
 	data=data.concat(uniqueID);
-	data.push(parseInt(batteryLevelQueue.shift())&0xFF);
+	data.push(parseInt(batteryLevelQueue.shift()));
 	data.push(parseInt(batteryHealthQueue.shift())&0xFF);
 
 	//poll sensor or get value or something

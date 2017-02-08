@@ -52,15 +52,13 @@ MAX17205.prototype.initialize = function() {
  *reports the voltage of the entire cell stack in 2S to 4S configuration
  * if PackCfg.BtEn = 1, Batt is a direct measurement of the VBATT pin with up to 20.48V range
  */
-MAX17205.BATT_REG_ADDR=0xDA;
+MAX17205.AvSOC_ADDR=0x0E;
 MAX17205.prototype.getVoltage= function (callback) {
-	this.i2cdev.readBytes(MAX17205.BATT_REG_ADDR, 2, function(err, buffer){
+	this.i2cdev.readBytes(MAX17205.AvSOC_ADDR, 2, function(err, buffer){
   if (err){
      callback(err);
   }else{
-  	var data=(buffer.readUInt8(1)<<8)+buffer.readUInt8(0)
-  	//resolution is 1.25mv
-  	var data=data/800
+  	var data=(buffer.readUInt8(1))&0xff
     callback(data);
   }
   });
