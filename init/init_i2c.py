@@ -38,6 +38,8 @@ def getMax17205Address(regName):
 		return 0x1B8;
 	elif regName =="CommStat":
 		return 0x61;
+	elif regName =="FullCapNom":
+		return 0x23;
 	else:
 		sys.exit();
 """@regAddress integer returned from getMax17205Address(regName)"""
@@ -85,8 +87,8 @@ if __name__ == '__main__':
 	regsToRead=["AvCap","AVSOC","VFSOC","VFOCV","Batt","Current","AvgCurrent"];
 	readRegs(bus,regsToRead);
 	
-	regsToWrite=["nSense=0x000A","nDesignCap=0x9C40","nVEmpty=0xC4E3","nDesignVoltage=0x2EE0",
-	"nPackCfg=0xA03","nNVCfg=0x34"];
+	regsToWrite=["nSense=0x000A","nDesignCap=0x7530","nVEmpty=0xC4E3","nDesignVoltage=0x1014",
+	"nPackCfg=0xA03","nNVCfg=0x34","FullCapNom=0x7530"];
 	while True:
 		writeRegs(bus,regsToWrite);
 		regsToWrite=readRegsWCheck(bus,regsToWrite);
@@ -116,7 +118,7 @@ if __name__ == '__main__':
 			break;
 	print ("CommonStat.NVError is cleared, block copied");
 	#POR the flash
-	#bus.write_word_data(getPage(cmdAddr),cmdAddr,0x000F);
+	bus.write_word_data(getPage(cmdAddr),cmdAddr,0x000F);
 	print("%04x" %(bus.read_word_data(getPage(0x1ED),0x1ED)));
 	print ("reset chip");
 	bus.write_word_data(getPage(cmdAddr),cmdAddr,0x0F);
