@@ -67,6 +67,7 @@ function readIP(){
 
 var uniqueID=[];
 var batteryStatusQueue=[];
+var TTEQueue=[];
 BatteryLevelCharacteristic.prototype.setI2cUpdateInterval=function(ms){
   this.i2cUpdateInterval=setInterval(function() {
   //6 byte uniqueID
@@ -82,6 +83,8 @@ BatteryLevelCharacteristic.prototype.setI2cUpdateInterval=function(ms){
   
   fuelGauge.getBatteryStatus((function(data){batteryStatusQueue.push(data);}));
 
+  fuelGauge.getTTE((function(data){TTEQueue.push(data);}));
+  
   fuelGauge.getCurrent((function(data){
     console.log("from fuel gauge, current is "+data);}));
   },ms);
@@ -90,7 +93,7 @@ BatteryLevelCharacteristic.prototype.setI2cUpdateInterval=function(ms){
 BatteryLevelCharacteristic.prototype.onReadRequest = function(offset, callback) {
   var data=[];
   var errorCode=0;
-  if(batteryStatusQueue.length<=0){
+  if(batteryStatusQueue.length<=0 || TTEQueue.length<=0){
     errorCode=1;
   }
   if(uniqueID.length!=6){
@@ -99,8 +102,10 @@ BatteryLevelCharacteristic.prototype.onReadRequest = function(offset, callback) 
   data.push(errorCode);
   data=data.concat(uniqueID);
   var temp=batteryStatusQueue[0];
+  
   data.push(parseInt((temp>>8)&0xFF));
   data.push(parseInt(temp&0xFF));
+  data.push(TTEQueue[0]);
   if(needIP&&hasIP){
     //data 2-5 ip addr
     var ip=readIP();
@@ -132,7 +137,7 @@ BatteryLevelCharacteristic.prototype.onSubscribe = function(maxValueSize, callba
   this.interval=setInterval(function() {
     var data=[];
     var errorCode=0;
-    if(batteryStatusQueue.length<=0){
+    if(batteryStatusQueue.length<=0|| TTEQueue.length<=0){
       errorCode=1;
     }
     data.push(errorCode);
@@ -140,7 +145,9 @@ BatteryLevelCharacteristic.prototype.onSubscribe = function(maxValueSize, callba
     var temp=batteryStatusQueue.shift();
     data.push(parseInt((temp>>8)&0xFF));
     data.push(parseInt(temp&0xFF));
-
+	temp=TTEQueue.shift()
+	data.push(parseInt((temp>>8)&0xFF));
+    data.push(parseInt(temp&0xFF));
     if(errorCode==1){
       callback(errorCode);
     }else{

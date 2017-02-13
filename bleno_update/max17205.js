@@ -27,6 +27,17 @@ MAX17205.prototype.getBatteryStatus= function (callback) {
   });
 };
 
+MAX17205.prototype.getTTE= function (callback) {
+  this.pageL.readBytes(0x11, 2, function(err, buffer){
+    if (err){callback(err);}
+    else{
+      var data=((buffer.readUInt8(1)<<8)&0xff00)+((buffer.readUInt8(0))&0xff)
+	  data=parseInt(data/10.67)
+      callback(data);
+    }
+  });
+};
+
 //Current Register (00Ah)
 MAX17205.CURRENT_REG=0x0A;
 MAX17205.prototype.getCurrent= function (callback) {
