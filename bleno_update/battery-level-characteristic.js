@@ -105,7 +105,9 @@ BatteryLevelCharacteristic.prototype.onReadRequest = function(offset, callback) 
   
   data.push(parseInt((temp>>8)&0xFF));
   data.push(parseInt(temp&0xFF));
-  data.push(TTEQueue[0]);
+  temp=TTEQueue.shift()
+  data.push(parseInt((temp>>8)&0xFF));
+  data.push(parseInt(temp&0xFF));
   if(needIP&&hasIP){
     //data 2-5 ip addr
     var ip=readIP();
