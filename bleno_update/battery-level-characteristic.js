@@ -64,10 +64,13 @@ function readIP(){
   }
   return byteArray
 }
-
-var uniqueID=[];
-var batteryStatusQueue=[];
-var TTEQueue=[];
+const sizeQ=20
+var uniqueID=[]
+var batteryStatusQ=[]
+var TTEQ=[]
+var TTFQ=[]
+var currentQ=[]
+var voltQ=[]
 BatteryLevelCharacteristic.prototype.setI2cUpdateInterval=function(ms){
   this.i2cUpdateInterval=setInterval(function() {
   //6 byte uniqueID
@@ -76,38 +79,89 @@ BatteryLevelCharacteristic.prototype.setI2cUpdateInterval=function(ms){
       uniqueID=data;
       console.log("@setI2cUpdateInterval uniqueID: "+uniqueID);}));
   }
-  if(batteryStatusQueue.length>20){
+  if(batteryStatusQ.length>sizeQ){
     //dequeue the last item from queue, drop that data
-    batteryStatusQueue.shift();
+    batteryStatusQ.shift();
   }
+  if(TTEQ.length>sizeQ){
+	TTEQ.shift()
+  }
+  if(TTFQ.length>sizeQ){
+	TTFQ.shift()
+  }
+  if(currentQ>sizeQ){
+	currentQ.shift() 
+  }
+  if(voltQ>sizeQ){
+	voltQ.shift()
+  } 
   
-  fuelGauge.getBatteryStatus((function(data){batteryStatusQueue.push(data);}));
+  fuelGauge.getBatteryStatus((function(data){batteryStatusQ.push(data);}));
 
-  fuelGauge.getTTE((function(data){TTEQueue.push(data);}));
+  fuelGauge.getTTE((function(data){TTEQ.push(data);}));
+  
+  fuelGauge.getTTF((function(data){TTFQ.push(data);}));
   
   fuelGauge.getCurrent((function(data){
+    currentQ.push(data)
     console.log("from fuel gauge, current is "+data);}));
+	
+  fuelGauge.getVolt((function(data){voltQ.push(data);}));
   },ms);
 };
 
-BatteryLevelCharacteristic.prototype.onReadRequest = function(offset, callback) {
-  var data=[];
-  var errorCode=0;
-  if(batteryStatusQueue.length<=0 || TTEQueue.length<=0){
-    errorCode=1;
+/**
+  * data array is errorCode(1byte) + uniqueID(6b) + level(1b) + health(1b) +TTE/TTF(2b)+Current(2b)+Voltage(2b)
+  (+ IP(4b))
+  * errorCode: 0-no error
+ */
+function prepareData(){
+  var data=[]
+  var errorCode=0
+  if(batteryStatusQ.length<=0){
+    errorCode=1
+  }else if(TTEQ.length<=0){
+	errorCode=2  
+  }else if(TTFQ.length<=0){
+	errorCode=3  
+  }else if(currentQ.length<=0){
+	errorCode=4
+  }else if(voltQ.length<=0){
+	errorCode=5
   }
   if(uniqueID.length!=6){
-    errorCode=1;
+    errorCode=1
   }
   data.push(errorCode);
   data=data.concat(uniqueID);
-  var temp=batteryStatusQueue[0];
+  var temp=batteryStatusQ[0];
+  data.push(parseInt((temp>>8)&0xFF))
+  data.push(parseInt(temp&0xFF))
   
-  data.push(parseInt((temp>>8)&0xFF));
-  data.push(parseInt(temp&0xFF));
-  temp=TTEQueue.shift()
-  data.push(parseInt((temp>>8)&0xFF));
-  data.push(parseInt(temp&0xFF));
+  var current=currentQ.shift()
+  if(current>0){
+	temp=TTEQ.shift()
+	TTFQ.shift()
+    data.push(parseInt((temp>>8)&0xFF))
+    data.push(parseInt(temp&0xFF)) 
+  }else{
+	temp=TTFQ.shift()
+	TTEQ.shift()  
+	data.push(parseInt((temp>>8)&0xFF))
+    data.push(parseInt(temp&0xFF))  
+  }
+  data.push(parseInt((current>>8)&0xFF))
+  data.push(parseInt(current&0xFF))  
+  var volt=voltQ.shift()
+  data.push(parseInt((volt>>8)&0xFF))
+  data.push(parseInt(volt&0xFF))  
+  
+  return data;
+}
+BatteryLevelCharacteristic.prototype.onReadRequest = function(offset, callback) {
+
+  var data=prepareData();
+ 
   if(needIP&&hasIP){
     //data 2-5 ip addr
     var ip=readIP();
@@ -115,8 +169,8 @@ BatteryLevelCharacteristic.prototype.onReadRequest = function(offset, callback) 
       data.push(ip[i]);
     }
   }
-  if(errorCode==1){
-    callback(this.RESULT_SUCCESS,errorCode);
+  if(data[0]!=0){
+    callback(this.RESULT_SUCCESS,data[0]);
   }else{
     if(verbose){
       console.log("@onReadRequest data to be sent is "+data);
@@ -129,47 +183,21 @@ BatteryLevelCharacteristic.prototype.onSubscribe = function(maxValueSize, callba
   if(verbose){
     console.log("@onSubscribe Device  subscribed");
   }
-  if(this.i2cUpdateInterval!=null){
-    clearInterval(this.i2cUpdateInterval);
-  }
-  //data array is errorCode + uniqueID + level + health (+ IP)
-  //				1 byte		6 bytes	   1 byte	1 byte	4 bytes
-  //errorCode: 0-no error; 1-error
-  this.setI2cUpdateInterval(300);
   this.interval=setInterval(function() {
-    var data=[];
-    var errorCode=0;
-    if(batteryStatusQueue.length<=0|| TTEQueue.length<=0){
-      errorCode=1;
-    }
-    data.push(errorCode);
-    data=data.concat(uniqueID);
-    var temp=batteryStatusQueue.shift();
-    data.push(parseInt((temp>>8)&0xFF));
-    data.push(parseInt(temp&0xFF));
-	temp=TTEQueue.shift()
-	data.push(parseInt((temp>>8)&0xFF));
-    data.push(parseInt(temp&0xFF));
-    if(errorCode==1){
-      callback(errorCode);
-    }else{
+    var data=prepareData();
+    
       if(verbose){
         console.log("@onSubscribe data to be sent is "+data);
       }
       callback(data);
-    }
-  }, 1000);
+    
+  }, 3003);
 };
 
 BatteryLevelCharacteristic.prototype.onUnsubscribe = function(){
   if(verbose){
     console.log("@onUnsubscribe Device unsubscribed");
-    //console.log("@onUnsubscribe slower battery data update rate from 300ms to 10s");
   }
   clearInterval(this.interval);
-  if(this.i2cUpdateInterval!=null){
-    clearInterval(this.i2cUpdateInterval);
-  }
-  //this.setI2cUpdateInterval(10000);
 };
 module.exports = BatteryLevelCharacteristic;

@@ -37,18 +37,36 @@ MAX17205.prototype.getTTE= function (callback) {
     }
   });
 };
+MAX17205.prototype.getTTF= function (callback) {
+  this.pageL.readBytes(0x20, 2, function(err, buffer){
+    if (err){callback(err);}
+    else{
+      var data=((buffer.readUInt8(1)<<8)&0xff00)+((buffer.readUInt8(0))&0xff)
+	  data=parseInt(data/10.67)
+      callback(data);
+    }
+  });
+};
 
-//Current Register (00Ah)
 MAX17205.CURRENT_REG=0x0A;
 MAX17205.prototype.getCurrent= function (callback) {
     this.pageL.readBytes(MAX17205.CURRENT_REG, 2, function(err, buffer){
     if (err) return callback(err);
     var data=(buffer.readUInt8(1)<<8)+buffer.readUInt8(0)
-    //resolution wrt sense resistance
-    //var data=data/500000
-    //console.log("data is "+ data);
-    //console.log("~data is "+ (~data));
-    data=(~data)&0xffff;
+    if((data&0x8000) === 0x8000){
+		data=parseInt(((~data)&0xffff)*-0.625)
+	}else{
+		data=parseInt(data*0.625)
+	}
+    callback(data);
+  });
+};
+MAX17205.VOLT_REG=0xDA;
+MAX17205.prototype.getVolt= function (callback) {
+    this.pageL.readBytes(MAX17205.VOLT_REG, 2, function(err, buffer){
+    if (err) return callback(err);
+    var data=(buffer.readUInt8(1)<<8)+buffer.readUInt8(0)
+    data=parseInt(data*1.25)
     callback(data);
   });
 };

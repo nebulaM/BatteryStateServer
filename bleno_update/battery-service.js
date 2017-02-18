@@ -5,12 +5,13 @@ var bleno = require('../bleno-master');
 
 var BatteryLevelCharacteristic = require('./battery-level-characteristic');
 
+var mChar=new BatteryLevelCharacteristic()
+mChar.setI2cUpdateInterval(2000);
+
 function BatteryService() {
   bleno.PrimaryService.call(this, {
       uuid: '180F',
-      characteristics: [
-          new BatteryLevelCharacteristic()
-      ]
+      characteristics: [mChar]
   });
 }
 
