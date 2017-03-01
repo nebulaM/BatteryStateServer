@@ -139,7 +139,7 @@ function prepareData(){
   data.push(parseInt(temp&0xFF))
   
   var current=currentQ.shift()
-  if(current>0){
+  if(current<=0){
 	temp=TTEQ.shift()
 	TTFQ.shift()
     data.push(parseInt((temp>>8)&0xFF))
