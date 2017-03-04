@@ -1,0 +1,25 @@
+if pgrep "node" > /dev/null
+then
+	echo "killing process $(pgrep "node")..."
+        sudo kill $(pgrep "node")
+fi
+countLog=1
+if [ ! -d /home/pi/Documents/battery-service/serverLog ]
+then
+	echo "/home/pi/Documents/battery-service/serverLog/ does not exist, make it now"
+	mkdir /home/pi/Documents/battery-service/serverLog
+fi
+if [ ! -f /home/pi/Documents/battery-service/serverLog/count.txt ]
+then
+	echo $countLog > /home/pi/Documents/battery-service/serverLog/count.txt
+else
+	countLog=$(< /home/pi/Documents/battery-service/serverLog/count.txt)
+	countLog=$((countLog+1))
+	echo $countLog > /home/pi/Documents/battery-service/serverLog/count.txt
+fi	
+echo "start BLE battery service..."
+echo "save BLE battery service log to /home/pi/Documents/battery-service/serverLog/main_$countLog.log"
+sudo node /home/pi/Documents/battery-service/main.js | tee /home/pi/Documents/battery-service/serverLog/main_$countLog.log &
+#optional: for getting ip
+echo "set up button for Pi's IP address, update IP by connecting Pin 14 to 3.3V for a few seconds..."
+sudo /usr/bin/python ~/Documents/battery-service/checkIP.py &
