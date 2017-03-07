@@ -104,11 +104,13 @@ BatteryLevelCharacteristic.prototype.setI2cUpdateInterval=function(ms){
   
   fuelGauge.getCurrent((function(data){
     currentQ.push(data)
-    console.log("from fuel gauge, current is "+data);}));
+    //console.log("from fuel gauge, current is "+data);
+	}));
 	
   fuelGauge.getVolt((function(data){voltQ.push(data);}));
   },ms);
 };
+
 
 /**
   * data array is errorCode(1byte) + uniqueID(6b) + level(1b) + health(1b) +TTE/TTF(2b)+Current(2b)+Voltage(2b)
