@@ -22,4 +22,6 @@ echo "save BLE battery service log to /home/pi/Documents/battery-service/serverL
 sudo node /home/pi/Documents/battery-service/main.js | tee /home/pi/Documents/battery-service/serverLog/main_$countLog.log &
 #optional: for getting ip
 echo "set up button for Pi's IP address, update IP by connecting Pin 14 to 3.3V for a few seconds..."
-sudo /usr/bin/python ~/Documents/battery-service/checkIP.py &
+sudo /usr/bin/python /home/pi/Documents/battery-service/checkIP.py &
+#battery log
+sudo /usr/bin/python /home/pi/Documents/battery-service/logger.py &

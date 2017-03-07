@@ -7,5 +7,5 @@ fi
 echo "start BLE battery service..."
 sudo node /home/pi/Documents/battery-service/main.js &
 #optional: for getting ip
-sudo /usr/bin/python ~/Documents/battery-service/checkIP.py &
+sudo /usr/bin/python home/pi/Documents/battery-service/checkIP.py &
 
