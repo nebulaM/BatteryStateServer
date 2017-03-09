@@ -122,18 +122,14 @@ function prepareData(){
   var errorCode=0
   if(batteryStatusQ.length<=0){
     errorCode=1
-  }else if(TTEQ.length<=0){
+  }else if(TTEQ.length<=0 && TTFQ.length<=0){
 	errorCode=2  
-  }else if(TTFQ.length<=0){
-	errorCode=3  
   }else if(currentQ.length<=0){
 	errorCode=4
   }else if(voltQ.length<=0){
 	errorCode=5
   }
-  if(uniqueID.length!=6){
-    errorCode=1
-  }
+  
   data.push(errorCode);
   data=data.concat(uniqueID);
   var temp=batteryStatusQ[0];
