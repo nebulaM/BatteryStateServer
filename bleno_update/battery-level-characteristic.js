@@ -64,7 +64,7 @@ function readIP(){
   }
   return byteArray
 }
-const sizeQ=20
+const sizeQ=10
 var uniqueID=[]
 var batteryStatusQ=[]
 var TTEQ=[]
