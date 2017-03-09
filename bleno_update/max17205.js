@@ -47,7 +47,9 @@ MAX17205.prototype.getTTF= function (callback) {
     }
   });
 };
-
+/**
+ * return current in mA
+ */
 MAX17205.CURRENT_REG=0x0A;
 MAX17205.prototype.getCurrent= function (callback) {
     this.pageL.readBytes(MAX17205.CURRENT_REG, 2, function(err, buffer){
@@ -61,6 +63,11 @@ MAX17205.prototype.getCurrent= function (callback) {
     callback(data);
   });
 };
+
+
+/**
+ * return voltage in mV
+ */
 MAX17205.VOLT_REG=0xDA;
 MAX17205.prototype.getVolt= function (callback) {
     this.pageL.readBytes(MAX17205.VOLT_REG, 2, function(err, buffer){
@@ -70,6 +77,20 @@ MAX17205.prototype.getVolt= function (callback) {
     callback(data);
   });
 };
+
+/**
+ * cycle left
+*/
+MAX17205.Cycle=0x17
+MAX17205.prototype.getCycle= function (callback) {
+    this.pageL.readBytes(MAX17205.Cycle, 2, function(err, buffer){
+    if (err) return callback(err);
+    var data=(buffer.readUInt8(1)<<8)+buffer.readUInt8(0)
+    data=parseInt(Math.round(data*0.16))
+    callback(data);
+  });
+};
+
 
 //1BC-1BF contains a 64-bit unique number for this chip
 MAX17205.nROMID0=0x1BC;

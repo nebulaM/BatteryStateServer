@@ -71,6 +71,7 @@ var TTEQ=[]
 var TTFQ=[]
 var currentQ=[]
 var voltQ=[]
+var cycleQ=[]
 BatteryLevelCharacteristic.prototype.setI2cUpdateInterval=function(ms){
   this.i2cUpdateInterval=setInterval(function() {
   //6 byte uniqueID
@@ -95,7 +96,9 @@ BatteryLevelCharacteristic.prototype.setI2cUpdateInterval=function(ms){
   if(voltQ>sizeQ){
 	voltQ.shift()
   } 
-  
+  if(cycleQ>sizeQ){
+	cycleQ.shift()
+  }
   fuelGauge.getBatteryStatus((function(data){batteryStatusQ.push(data);}));
 
   fuelGauge.getTTE((function(data){TTEQ.push(data);}));
@@ -108,13 +111,14 @@ BatteryLevelCharacteristic.prototype.setI2cUpdateInterval=function(ms){
 	}));
 	
   fuelGauge.getVolt((function(data){voltQ.push(data);}));
+  fuelGauge.getCycle((function(data){cycleQ.push(data);}));
   },ms);
 };
 
 
 /**
-  * data array is errorCode(1byte) + uniqueID(6b) + level(1b) + health(1b) +TTE/TTF(2b)+Current(2b)+Voltage(2b)
-  (+ IP(4b))
+  * data array is errorCode(1byte) + uniqueID(6b) + level(1b) + health(1b) +TTE/TTF(2b)+Current(2b)+Voltage(2b)+Cycles(2b)
+ 
   * errorCode: 0-no error
  */
 function prepareData(){
@@ -128,6 +132,8 @@ function prepareData(){
 	errorCode=4
   }else if(voltQ.length<=0){
 	errorCode=5
+  }else if(cycleQ.length<=0){
+	errorCode=6
   }
   
   data.push(errorCode);
@@ -153,6 +159,10 @@ function prepareData(){
   var volt=voltQ.shift()
   data.push(parseInt((volt>>8)&0xFF))
   data.push(parseInt(volt&0xFF))  
+  
+  var cycle=cycleQ.shift()
+  data.push(parseInt((cycle>>8)&0xFF))
+  data.push(parseInt(cycle&0xFF))  
   
   return data;
 }
