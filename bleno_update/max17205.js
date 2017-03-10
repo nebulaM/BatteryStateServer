@@ -92,6 +92,19 @@ MAX17205.prototype.getCycle= function (callback) {
 };
 
 
+/**
+ * RepCap in % but represented by Int	
+*/
+MAX17205.RepCap=0x5
+MAX17205.prototype.getRepCap= function (callback) {
+    this.pageL.readBytes(MAX17205.RepCap, 2, function(err, buffer){
+    if (err) return callback(err);
+    var data=(buffer.readUInt8(1)<<8)+buffer.readUInt8(0)
+    data=parseInt(Math.round(data*0.2))
+    callback(data);
+  });
+};
+
 //1BC-1BF contains a 64-bit unique number for this chip
 MAX17205.nROMID0=0x1BC;
 MAX17205.prototype.getUniqueID= function (callback) {

@@ -72,6 +72,7 @@ var TTFQ=[]
 var currentQ=[]
 var voltQ=[]
 var cycleQ=[]
+var repCapQ=[]
 BatteryLevelCharacteristic.prototype.setI2cUpdateInterval=function(ms){
   this.i2cUpdateInterval=setInterval(function() {
   //6 byte uniqueID
@@ -90,14 +91,17 @@ BatteryLevelCharacteristic.prototype.setI2cUpdateInterval=function(ms){
   if(TTFQ.length>sizeQ){
 	TTFQ.shift()
   }
-  if(currentQ>sizeQ){
+  if(currentQ.length>sizeQ){
 	currentQ.shift() 
   }
-  if(voltQ>sizeQ){
+  if(voltQ.length>sizeQ){
 	voltQ.shift()
   } 
-  if(cycleQ>sizeQ){
+  if(cycleQ.length>sizeQ){
 	cycleQ.shift()
+  }
+  if(repCapQ.length>sizeQ){
+	repCapQ.shift()
   }
   fuelGauge.getBatteryStatus((function(data){batteryStatusQ.push(data);}));
 
@@ -112,12 +116,13 @@ BatteryLevelCharacteristic.prototype.setI2cUpdateInterval=function(ms){
 	
   fuelGauge.getVolt((function(data){voltQ.push(data);}));
   fuelGauge.getCycle((function(data){cycleQ.push(data);}));
+  fuelGauge.getRepCap((function(data){repCapQ.push(data);}));
   },ms);
 };
 
 
 /**
-  * data array is errorCode(1byte) + uniqueID(6b) + level(1b) + health(1b) +TTE/TTF(2b)+Current(2b)+Voltage(2b)+Cycles(2b)
+  * data array is errorCode(1byte) + uniqueID(6b) + level(1b) + health(1b) +TTE/TTF(2b)+Current(2b)+Voltage(2b)+Cycles(2b)+RepCap(2b)
  
   * errorCode: 0-no error
  */
@@ -135,10 +140,13 @@ function prepareData(){
   }else if(cycleQ.length<=0){
 	errorCode=6
   }
+  else if(repCapQ.length<=0){
+	errorCode=7
+  }
   
   data.push(errorCode);
   data=data.concat(uniqueID);
-  var temp=batteryStatusQ[0];
+  var temp=batteryStatusQ.shift();
   data.push(parseInt((temp>>8)&0xFF))
   data.push(parseInt(temp&0xFF))
   
@@ -163,7 +171,9 @@ function prepareData(){
   var cycle=cycleQ.shift()
   data.push(parseInt((cycle>>8)&0xFF))
   data.push(parseInt(cycle&0xFF))  
-  
+  var repCap=repCapQ.shift()
+  data.push(parseInt((repCap>>8)&0xFF))
+  data.push(parseInt(repCap&0xFF))  
   return data;
 }
 BatteryLevelCharacteristic.prototype.onReadRequest = function(offset, callback) {
@@ -174,17 +184,16 @@ BatteryLevelCharacteristic.prototype.onReadRequest = function(offset, callback) 
     //data 2-5 ip addr
     var ip=readIP();
     for(var i=0;i<4;++i){
-      data.push(ip[i]);
+      data[15+i]=ip[i];
     }
   }
-  if(data[0]!=0){
-    callback(this.RESULT_SUCCESS,data[0]);
-  }else{
+  data[0]=9
+  
     if(verbose){
       console.log("@onReadRequest data to be sent is "+data);
     }
     callback(this.RESULT_SUCCESS, data);
-  }
+  
 };
 
 BatteryLevelCharacteristic.prototype.onSubscribe = function(maxValueSize, callback) {
