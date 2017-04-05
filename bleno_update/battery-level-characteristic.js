@@ -203,7 +203,7 @@ BatteryLevelCharacteristic.prototype.onSubscribe = function(maxValueSize, callba
   this.interval=setInterval(function() {
     var data=prepareData();
     
-      if(verbose){
+      if(verbose && data[0]!=0){
         console.log("@onSubscribe data to be sent is "+data);
       }
       callback(data);
